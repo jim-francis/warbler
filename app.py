@@ -5,7 +5,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy.exc import IntegrityError
 
 from forms import UserAddForm, LoginForm, MessageForm, EditUserForm
-from models import db, connect_db, User, Message
+from models import db, connect_db, User, Message, Likes
 
 CURR_USER_KEY = "curr_user"
 
@@ -209,6 +209,25 @@ def stop_following(follow_id):
 
     return redirect(f"/users/{g.user.id}/following")
 
+@app.route('/messages/<int:msg_id>/like', methods=["POST"])
+def add_like(msg_id):
+    """Like a message"""
+    
+    if not g.user:
+        flash("Access unauthorized.", "danger")
+        return redirect('/')
+    
+    liked_msg = Message.query.get_or_404(msg_id)
+    user_likes = g.user.likes
+    if liked_msg in user_likes:
+        g.user.likes = [like for like in user_likes if like != liked_msg]
+    else:
+        g.user.likes.append(liked_msg)
+
+    db.session.commit()
+    
+    return redirect('/')
+    
 
 @app.route('/users/profile', methods=["GET", "POST"])
 def profile():
